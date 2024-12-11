@@ -1,9 +1,6 @@
-import spacy
 from gramformer import Gramformer
 import os
-
-# Initialize spaCy model for sentence segmentation
-nlp = spacy.load("en_core_web_sm")
+import re
 
 def initialize_gramformer():
     """
@@ -21,26 +18,38 @@ def count_errors(original, corrected):
         corrected (str): Corrected sentence.
 
     Returns:
-        int: The count of errors.
+        tuple: The count of errors and a list of error details.
     """
     original_words = original.split()
     corrected_words = corrected.split()
-    
     error_count = 0
+    error_details = []
+    seen_errors = set()  # To track errors only once
 
-    # Compare original and corrected sentences using SequenceMatcher
-    from difflib import SequenceMatcher
-    matcher = SequenceMatcher(None, original_words, corrected_words)
+    # Compare words in the original and corrected sentences
+    for i in range(min(len(original_words), len(corrected_words))):
+        if original_words[i] != corrected_words[i]:
+            # If this word pair hasn't been seen yet, add as error
+            if (original_words[i], corrected_words[i]) not in seen_errors:
+                error_count += 1
+                error_details.append(f"Replaced: [{original_words[i]}] -> [{corrected_words[i]}]")
+                seen_errors.add((original_words[i], corrected_words[i]))
 
-    for tag, i1, i2, j1, j2 in matcher.get_opcodes():
-        if tag == "replace":  # If words were replaced, count as errors
-            error_count += max(i2 - i1, j2 - j1)
-        elif tag == "insert":  # If words were inserted in the corrected sentence
-            error_count += (j2 - j1)
-        elif tag == "delete":  # If words were deleted in the corrected sentence
-            error_count += (i2 - i1)
+    # If the sentences are of different lengths, count the extra words as errors
+    if len(original_words) < len(corrected_words):
+        for i in range(len(original_words), len(corrected_words)):
+            if corrected_words[i] not in seen_errors:
+                error_count += 1
+                error_details.append(f"Inserted: [{corrected_words[i]}]")
+                seen_errors.add((None, corrected_words[i]))  # mark as inserted
+    elif len(original_words) > len(corrected_words):
+        for i in range(len(corrected_words), len(original_words)):
+            if original_words[i] not in seen_errors:
+                error_count += 1
+                error_details.append(f"Deleted: [{original_words[i]}]")
+                seen_errors.add((original_words[i], None))  # mark as deleted
 
-    return error_count
+    return error_count, error_details
 
 def correct_sentence_with_error_count(gf, sentence):
     """
@@ -51,13 +60,13 @@ def correct_sentence_with_error_count(gf, sentence):
         sentence (str): Original sentence to correct.
 
     Returns:
-        tuple: (corrected_sentence, error_count)
+        tuple: (corrected_sentence, error_count, error_details)
     """
     corrections = list(gf.correct(sentence))
     corrected_sentence = corrections[0] if corrections else sentence
-    error_count = count_errors(sentence, corrected_sentence)
+    error_count, error_details = count_errors(sentence, corrected_sentence)
     
-    return corrected_sentence, error_count
+    return corrected_sentence, error_count, error_details
 
 def process_text_file(file_path, output_path, gf):
     """
@@ -72,49 +81,50 @@ def process_text_file(file_path, output_path, gf):
     """
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"File '{file_path}' does not exist.")
-    
-    with open(file_path, "r", encoding="utf-8") as file:
-        text = file.read()
 
-    # Use spaCy for sentence segmentation (no need for full stop)
-    doc = nlp(text)
-    sentences = [sent.text.strip() for sent in doc.sents]  # spaCy handles segmentation without full stops
+    with open(file_path, "r", encoding="utf-8") as file:
+        lines = file.readlines()
 
     corrected_sentences = []
     total_sentences = 0
     total_errors = 0
+    all_error_details = []
 
-    for sentence in sentences:
-        if sentence:  # Ignore empty sentences
-            total_sentences += 1
-            corrected, errors = correct_sentence_with_error_count(gf, sentence)
-            corrected_sentences.append(corrected)
-            total_errors += errors
+    # Process each sentence
+    for line in lines:
+        # Split on punctuation (periods, exclamation marks, question marks) and new lines
+        sentences = re.split(r'(?<!\w\.\w.)(?<![A-Z][a-z]\.)(?<=\.|\?|\!|\n)', line.strip())
+        for sentence in sentences:
+            if sentence.strip():  # Ignore empty sentences
+                total_sentences += 1
+                corrected, errors, error_details = correct_sentence_with_error_count(gf, sentence.strip())
+                corrected_sentences.append(corrected)
+                total_errors += errors
+                all_error_details.extend(error_details)
 
     # Save corrected sentences to output file
     with open(output_path, "w", encoding="utf-8") as file:
         file.write("\n".join(corrected_sentences))
 
-    # Calculate grammar score (avoid division by zero)
-    grammar_score = ((total_sentences - total_errors) / total_sentences) * 100 if total_sentences > 0 else 0
-
+    # Return the results
     return {
         "total_sentences": total_sentences,
         "total_errors": total_errors,
-        "grammar_score": grammar_score,
+        "grammar_score": total_errors,  # Number of errors as grammar score
         "output_file": output_path,
+        "error_details": all_error_details,
     }
 
 def main():
     """
-    Main function to process a text file, calculate grammar score, and save corrected output.
+    Main function to process a text file, calculate grammar errors, and save corrected output.
     """
     print("Initializing the grammar correction model...")
     gf = initialize_gramformer()
     print("Model initialized successfully!")
 
     # Specify the input and output file paths
-    input_file = r"C:\path\to\your\file.txt"  # Replace with your input file path
+    input_file = r"C:\Users\mitta\OneDrive - iiit-b\Documents\PluginHack\ML Models\sample.txt"  # Replace with your input file path
     output_file = "corrected_output.txt"  # Replace with your desired output file path
 
     try:
@@ -123,8 +133,12 @@ def main():
         print("\n--- Grammar Score Report ---")
         print(f"Total Sentences: {results['total_sentences']}")
         print(f"Errors Detected: {results['total_errors']}")
-        print(f"Grammar Score: {results['grammar_score']:.2f}%")
+        print(f"Grammar Score (Number of Errors): {results['grammar_score']}")
         print(f"Corrected output saved to: {results['output_file']}")
+
+        print("\n--- Detailed Errors ---")
+        for error in results["error_details"]:
+            print(error)
 
     except FileNotFoundError as e:
         print(e)

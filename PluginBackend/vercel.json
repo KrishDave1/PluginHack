@@ -17,5 +17,17 @@
       "src": "/(.*)",
       "dest": "PluginBackend/wsgi.py"
     }
-  ]
+  ],
+  "build": {
+    "commands": [
+      "#!/bin/bash",
+      "set -e",
+      "python3.9 -m ensurepip --upgrade",
+      "python3.9 -m pip install --upgrade pip setuptools wheel",
+      "apt-get update && apt-get install -y python3-distutils",
+      "pip install -r PluginBackend/requirements.txt",
+      "python PluginBackend/manage.py collectstatic --noinput",
+      "python PluginBackend/manage.py migrate"
+    ]
+  }
 }

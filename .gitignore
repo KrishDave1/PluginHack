@@ -1,5 +1,6 @@
-.pyc
+*.pyc
 pluginenv
 .wav
 .mp3
 .mp4
+plugin

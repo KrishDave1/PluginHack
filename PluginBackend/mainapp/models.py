@@ -1,4 +1,4 @@
-from django.contrib.auth.models import AbstractUser, BaseUserManager, PermissionsMixin
+from django.contrib.auth.models import AbstractUser, BaseUserManager, PermissionsMixin, Group, Permission
 from django.db import models
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
@@ -34,6 +34,17 @@ class User(AbstractUser, PermissionsMixin):
     id = models.AutoField(primary_key=True)
 
     objects = CustomAccountManager()
+
+    groups = models.ManyToManyField(
+        Group,
+        related_name='custom_user_set',  # Unique related name for groups
+        blank=True,
+    )
+    user_permissions = models.ManyToManyField(
+        Permission,
+        related_name='custom_user_permissions_set',  # Unique related name for user_permissions
+        blank=True,
+    )
 
     # USERNAME_FIELD = 'username'
     USERNAME_FIELD = 'email'

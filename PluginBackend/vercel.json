@@ -1,8 +1,19 @@
 {
+  "version": 1,
   "builds": [
     {
-      "src": "Dockerfile",
-      "use": "@vercel/docker"
+      "src": "PluginBackend/wsgi.py",
+      "use": "@vercel/python",
+      "config": { "maxLambdaSize": "15mb" }
     }
-  ]
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "PluginBackend/wsgi.py"
+    }
+  ],
+  "env": {
+    "PYTHON_VERSION": "3.10"
+  }
 }

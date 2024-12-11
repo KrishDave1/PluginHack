@@ -4,7 +4,7 @@
     {
       "src": "PluginBackend/wsgi.py",
       "use": "@vercel/python",
-      "config": { "maxLambdaSize": "15mb", "runtime": "python3.10" }
+      "config": { "maxLambdaSize": "15mb" }
     },
     {
       "src": "./build-files.sh",
@@ -17,5 +17,8 @@
       "src": "/(.*)",
       "dest": "PluginBackend/wsgi.py"
     }
-  ]
+  ],
+  "env": {
+    "PYTHON_VERSION": "3.10"
+  }
 }

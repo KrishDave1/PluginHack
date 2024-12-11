@@ -1,24 +1,8 @@
 {
-  "version": 2,
   "builds": [
     {
-      "src": "PluginBackend/wsgi.py",
-      "use": "@vercel/python",
-      "config": { "maxLambdaSize": "15mb" }
-    },
-    {
-      "src": "./build-files.sh",
-      "use": "@vercel/static-build",
-      "config": { "distDir": "PluginBackend" }
+      "src": "Dockerfile",
+      "use": "@vercel/docker"
     }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "PluginBackend/wsgi.py"
-    }
-  ],
-  "env": {
-    "PYTHON_VERSION": "3.10"
-  }
+  ]
 }

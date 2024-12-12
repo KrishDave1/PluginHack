@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import * as lamejs from "@breezystack/lamejs";
 import axios from "axios"; // For API requests
+import jsPDF from "jspdf";
 
 const Video = () => {
   const [isRecording, setIsRecording] = useState(false);
@@ -17,6 +18,8 @@ const Video = () => {
   const recordedChunks = useRef([]);
   const [id, setId] = useState(0);
 
+  const [data, setData] = useState(null);
+
   useEffect(() => {
     if (id === 0) return;
     async function fetchRep(id) {
@@ -29,9 +32,112 @@ const Video = () => {
         }
       );
       console.log(response.data);
+      setData(response.data);
     }
     fetchRep(id);
   }, [id]);
+
+  const generatePDF = () => {
+    if (!data) return;
+
+    const doc = new jsPDF();
+
+    // Add title
+    doc.setFontSize(18);
+    doc.text("Speech Analysis Report", 20, 20);
+
+    // Add content
+    doc.setFontSize(12);
+    //doc.text(`Text of Speech:`, 20, 40);
+    //doc.text(data.text_of_speech, 20, 50);
+
+    doc.text(`Transcription:`, 20, 40);
+
+    // Wrap the text to fit within 180 units width
+    const speechText = data.text_of_speech;
+    const wrappedText = doc.splitTextToSize(speechText, 180);
+    doc.text(wrappedText, 20, 50);
+
+    doc.text("Fluency Metrics:", 20, 70);
+    doc.text(`Filler Word Count: ${data.fluency_score}`, 20, 80);
+    doc.text(`Fluency Score(Out of 50): ${data.filler_word_count}`, 20, 90);
+    //doc.text(`Grammar Score: ${data.grammar_score}`, 20, 100);
+    //doc.text(`Total Errors: ${data.corre}`, 20, 110);
+    doc.text(`Total Sentences: ${data.grammer_Maal.total_sentences}`, 20, 100);
+    doc.text(`Speaking Rate: ${data.speaking_rate} words/minute`, 20, 110);
+    doc.text(
+      `Pause Count(Number of Pauses greater than 1 second): ${data.pause_count}`,
+      20,
+      120
+    );
+    doc.text("Grammer Corrections:", 20, 140);
+    // Add corrected sentences
+    doc.text("Corrected Sentences:", 20, 150);
+    data.grammer_Maal.corrected_sentences.forEach((sentence, index) => {
+      doc.text(`${index + 1}. ${sentence}`, 20, 160 + index * 10);
+    });
+
+    // Add Pronunciation Analysis
+    const pronunciation = data.pronunciation_score;
+    doc.addPage(); // New page for better organization
+    doc.setFontSize(18);
+    doc.text("Pronunciation Analysis", 20, 20);
+
+    doc.setFontSize(12);
+    doc.text("Quantitative Metrics:", 20, 40);
+    doc.text(
+      `Cosine Similarity: ${pronunciation["Cosine Similarity"]}`,
+      20,
+      50
+    );
+    doc.text(
+      `Manhattan Distance: ${pronunciation["Manhattan Distance"]}`,
+      20,
+      60
+    );
+    doc.text(
+      `Mean Squared Error (MSE): ${pronunciation["Mean Squared Error (MSE)"]}`,
+      20,
+      70
+    );
+    doc.text(`Pitch Error: ${pronunciation["Pitch Error"]}`, 20, 80);
+    doc.text(
+      `Pronunciation Score (DTW): ${pronunciation["Pronunciation Score (DTW)"]}`,
+      20,
+      90
+    );
+
+    doc.text("Qualitative Implications:", 20, 110);
+    doc.text(
+      `Cosine Similarity:${data.pronunciation_analysis["Cosine Similarity"]}`,
+      20,
+      120
+    );
+    doc.text(
+      `Manhattan Distance:${data.pronunciation_analysis["Manhattan Distance"]}`,
+      20,
+      130
+    );
+    doc.text(
+      `MSE:${data.pronunciation_analysis["Mean Squared Error (MSE)"]}`,
+      20,
+      140
+    );
+    doc.text(
+      `Pitch Error:${data.pronunciation_analysis["Pitch Error"]}`,
+      20,
+      150
+    );
+    doc.text(
+      `Pronunciation Score (DTW):${data.pronunciation_analysis["Pronunciation Score (DTW)"]}`,
+      20,
+      160
+    );
+
+    // Save the PDF
+    doc.save("speech_analysis_report.pdf");
+  };
+
   const startRecording = async () => {
     const stream = await navigator.mediaDevices.getUserMedia({
       video: true,
@@ -258,6 +364,16 @@ const Video = () => {
           </button>
         </div>
       )}
+
+      <div className="bg-gray-100 min-h-screen flex flex-col items-center justify-center">
+        <h1 className="text-2xl font-bold mb-4">Generate PDF Report</h1>
+        <button
+          onClick={generatePDF}
+          className="bg-blue-600 text-white px-6 py-3 rounded-lg shadow-lg hover:bg-blue-700"
+        >
+          Download PDF
+        </button>
+      </div>
     </div>
   );
 };

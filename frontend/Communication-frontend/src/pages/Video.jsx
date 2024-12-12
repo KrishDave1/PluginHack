@@ -24,7 +24,7 @@ const Video = () => {
     if (id === 0) return;
     async function fetchRep(id) {
       const response = await axios.get(
-        "http://127.0.0.1:8000/report/?id=" + id,
+        `http://127.0.0.1:8000/report/?id=${id}&email=${email}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -275,13 +275,13 @@ const Video = () => {
   return (
     <div className="min-h-screen flex flex-col items-center p-6">
       <h1 className="text-5xl font-bold mt-6 mb-8">Live Video Recorder</h1>
-      <input
+      {/* <input
         type="email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         placeholder="Enter your email"
         className="mb-6 px-4 py-2 border rounded-lg text-lg"
-      />
+      /> */}
       <video
         ref={videoRef}
         autoPlay
@@ -365,14 +365,25 @@ const Video = () => {
         </div>
       )}
 
-      <div className="bg-gray-100 min-h-screen flex flex-col items-center justify-center">
-        <h1 className="text-2xl font-bold mb-4">Generate PDF Report</h1>
-        <button
-          onClick={generatePDF}
-          className="bg-blue-600 text-white px-6 py-3 rounded-lg shadow-lg hover:bg-blue-700"
-        >
-          Download PDF
-        </button>
+      <div className="w-full max-w-lg mt-10 p-6 bg-white rounded-lg shadow-lg border">
+        <h3 className="text-2xl font-semibold mb-4 text-center text-gray-800">
+          Generate Your Speech Analysis Report
+        </h3>
+        <p className="text-gray-600 text-center mb-6">
+          Click the button below to download a detailed analysis of your speech,
+          including fluency, grammar corrections, and pronunciation metrics.
+        </p>
+        <div className="flex flex-col items-center gap-4">
+          <button
+            onClick={generatePDF}
+            className="bg-blue-600 text-white text-lg px-6 py-3 rounded-full shadow-lg hover:bg-blue-700 transition-transform transform hover:scale-105"
+          >
+            Download PDF Report
+          </button>
+          <p className="text-gray-500 text-sm">
+            Ensure you’ve uploaded your video and audio for analysis.
+          </p>
+        </div>
       </div>
     </div>
   );

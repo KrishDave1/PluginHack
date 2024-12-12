@@ -1,6 +1,8 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 
 const Home = () => {
+  const navigate = useNavigate();
   return (
     <div className="bg-gray-100 min-h-screen">
       <header className="bg-blue-500 text-white py-10">
@@ -24,7 +26,10 @@ const Home = () => {
               Start your assessment and receive personalized feedback on your
               communication skills.
             </p>
-            <button className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700">
+            <button
+              onClick={() => navigate("/take-assessment")}
+              className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700"
+            >
               Start Now
             </button>
           </div>
@@ -48,7 +53,10 @@ const Home = () => {
               Manage your profile and get tailored recommendations to boost your
               skills.
             </p>
-            <button className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700">
+            <button
+              onClick={() => navigate("/profile")}
+              className="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700"
+            >
               Go to Profile
             </button>
           </div>

@@ -8,6 +8,7 @@ import Login from "./pages/Login";
 import Assessment from "./pages/Assessment";
 import PDF from "./pages/PDF";
 import VidAud from "./pages/VidAud";
+import Profile from "./pages/Profile.jsx";
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
           <Route path="/take-assessment" element={<Assessment />} />
           <Route path="/pdf" element={<PDF />} />
           <Route path="/vidaud" element={<VidAud />} />
+          <Route path="/profile" element={<Profile />} />
         </Routes>
       </div>
     </BrowserRouter>
